@@ -77,8 +77,8 @@ class Address(netlink.Object):
 
         if diff == 0:
             diff = self.family - other.family
-            if diff == 0:
-                diff = capi.nl_addr_cmp(self.local, other.local)
+        if diff == 0:
+            diff = capi.nl_addr_cmp(self.local, other.local)
 
         return diff
 
@@ -94,20 +94,16 @@ class Address(netlink.Object):
 
     @ifindex.setter
     def ifindex(self, value):
-        link = Link.resolve(value)
-        if not link:
+        if link := Link.resolve(value):
+            self.link = link
+        else:
             raise ValueError()
-
-        self.link = link
 
     @property
     @netlink.nlattr(type=str, fmt=util.string)
     def link(self):
         link = capi.rtnl_addr_get_link(self._rtnl_addr)
-        if not link:
-            return None
-
-        return Link.Link.from_capi(link)
+        return Link.Link.from_capi(link) if link else None
 
     @link.setter
     def link(self, value):
@@ -270,10 +266,7 @@ class Address(netlink.Object):
     def valid_lifetime(self):
         """Valid lifetime"""
         msecs = capi.rtnl_addr_get_valid_lifetime(self._rtnl_addr)
-        if msecs == 0xFFFFFFFF:
-            return None
-        else:
-            return datetime.timedelta(seconds=msecs)
+        return None if msecs == 0xFFFFFFFF else datetime.timedelta(seconds=msecs)
 
     @valid_lifetime.setter
     def valid_lifetime(self, value):
@@ -284,10 +277,7 @@ class Address(netlink.Object):
     def preferred_lifetime(self):
         """Preferred lifetime"""
         msecs = capi.rtnl_addr_get_preferred_lifetime(self._rtnl_addr)
-        if msecs == 0xFFFFFFFF:
-            return None
-        else:
-            return datetime.timedelta(seconds=msecs)
+        return None if msecs == 0xFFFFFFFF else datetime.timedelta(seconds=msecs)
 
     @preferred_lifetime.setter
     def preferred_lifetime(self, value):

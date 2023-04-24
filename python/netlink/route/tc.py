@@ -79,7 +79,7 @@ class Handle(object):
         return capi.rtnl_tc_handle2str(self._val, 64)[0]
 
     def isroot(self):
-        return self._val == TC_H_ROOT or self._val == TC_H_INGRESS
+        return self._val in [TC_H_ROOT, TC_H_INGRESS]
 
 class TcCache(netlink.Cache):
     """Cache of traffic control object"""
@@ -95,8 +95,7 @@ class Tc(netlink.Object):
         return diff
 
     def _tc_module_lookup(self):
-        self._module_lookup(self._module_path + self.kind,
-                    'init_' + self._name)
+        self._module_lookup(self._module_path + self.kind, f'init_{self._name}')
 
     @property
     def root(self):
@@ -115,10 +114,7 @@ class Tc(netlink.Object):
     @property
     def link(self):
         link = capi.rtnl_tc_get_link(self._rtnl_tc)
-        if not link:
-            return None
-
-        return Link.Link.from_capi(link)
+        return Link.Link.from_capi(link) if link else None
 
     @link.setter
     def link(self, value):
@@ -579,7 +575,7 @@ _cls_cache = {}
 
 def get_cls(ifindex, parent, handle=None):
 
-    chain = _cls_cache.get(ifindex, dict())
+    chain = _cls_cache.get(ifindex, {})
 
     try:
         cache = chain[parent]
@@ -590,6 +586,6 @@ def get_cls(ifindex, parent, handle=None):
     cache.refill()
 
     if handle is None:
-        return [ cls for cls in cache ]
+        return list(cache)
 
     return [ cls for cls in cache if cls.handle == handle ]

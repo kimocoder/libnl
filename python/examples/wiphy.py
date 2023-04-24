@@ -19,17 +19,17 @@ def freq_to_ch(freq):
 	if freq < 45000:
 		return freq/5 - 1000;
 
-	if freq >= 58320 and freq <= 64800:
-		return (freq - 56160) / 2160;
-
-	return 0;
+	return (freq - 56160) / 2160 if freq >= 58320 and freq <= 64800 else 0
 
 def handle_freq(attr, pol):
 	e, fattr = nl.py_nla_parse_nested(nl80211.NL80211_FREQUENCY_ATTR_MAX, attr, pol)
 	if nl80211.NL80211_FREQUENCY_ATTR_FREQ in fattr:
 		freq = nl.nla_get_u32(fattr[nl80211.NL80211_FREQUENCY_ATTR_FREQ])
 		sys.stdout.write("\t\tfreq %d MHz [%d]" % (freq, freq_to_ch(freq)))
-	if nl80211.NL80211_FREQUENCY_ATTR_MAX_TX_POWER in fattr and not (nl80211.NL80211_FREQUENCY_ATTR_DISABLED in fattr):
+	if (
+		nl80211.NL80211_FREQUENCY_ATTR_MAX_TX_POWER in fattr
+		and nl80211.NL80211_FREQUENCY_ATTR_DISABLED not in fattr
+	):
 		sys.stdout.write(" (%.1f dBm)" % (0.01 * nl.nla_get_u32(fattr[nl80211.NL80211_FREQUENCY_ATTR_MAX_TX_POWER])))
 	if nl80211.NL80211_FREQUENCY_ATTR_DISABLED in fattr:
 		sys.stdout.write(" (disabled)")

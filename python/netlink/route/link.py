@@ -147,7 +147,7 @@ class Link(netlink.Object):
         self._rtnl_link = self._obj2type(self._nl_object)
 
         if self.type:
-            self._module_lookup('netlink.route.links.' + self.type)
+            self._module_lookup(f'netlink.route.links.{self.type}')
 
         self.inet = inet.InetLink(self)
         self.af = {'inet' : self.inet }
@@ -238,7 +238,7 @@ class Link(netlink.Object):
 
     @flags.setter
     def flags(self, value):
-        if not (type(value) is str):
+        if type(value) is not str:
             for flag in value:
                 self._set_flag(flag)
         else:
@@ -363,7 +363,7 @@ class Link(netlink.Object):
         if capi.rtnl_link_set_type(self._rtnl_link, value) < 0:
             raise NameError('unknown info type')
 
-        self._module_lookup('netlink.route.links.' + value)
+        self._module_lookup(f'netlink.route.links.{value}')
 
     def get_stat(self, stat):
         """Retrieve statistical information"""
@@ -450,8 +450,8 @@ class Link(netlink.Object):
             try:
                 func = getattr(self.af[af], name)
                 s = str(func(args))
-                if len(s) > 0:
-                    buf += ' ' + s
+                if s != "":
+                    buf += f' {s}'
             except AttributeError:
                 pass
         return buf
@@ -539,10 +539,7 @@ def get(name, sock=None):
         sock = netlink.lookup_socket(netlink.NETLINK_ROUTE)
 
     link = capi.get_from_kernel(sock._sock, 0, name)
-    if not link:
-        return None
-
-    return Link.from_capi(link)
+    return Link.from_capi(link) if link else None
 
 _link_cache = LinkCache()
 

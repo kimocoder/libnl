@@ -14,12 +14,10 @@ def parse_dict(filename):
 		m = re.match('^([^=]+)=([^\n]+)$', line);
 		if not m:
 			continue
-		name = m.group(1)
-		value = m.group(2)
+		name = m[1]
+		value = m[2]
 
-		# strip leading and trailing whitespace
-		m = rc_script.match(name)
-		if m:
+		if m := rc_script.match(name):
 			name = m.group(1)
 
 		# skip special names

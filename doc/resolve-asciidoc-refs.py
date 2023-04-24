@@ -5,14 +5,10 @@ import re
 import sys
 
 refs = {}
-complete_file = ""
-
-for line in open(sys.argv[1], 'r'):
-	complete_file += line
-
+complete_file = "".join(open(sys.argv[1], 'r'))
 for m in re.findall('\[\[(.+)\]\]\n=+ ([^\n]+)', complete_file):
 	ref, title = m
-	refs["<<" + ref + ">>"] = "<<" + ref + ", " + title + ">>"
+	refs[f"<<{ref}>>"] = f"<<{ref}, {title}>>"
 
 def translate(match):
 	try:

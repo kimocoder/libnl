@@ -115,11 +115,7 @@ class Message(object):
     """Netlink message"""
 
     def __init__(self, size=0):
-        if size == 0:
-            self._msg = capi.nlmsg_alloc()
-        else:
-            self._msg = capi.nlmsg_alloc_size(size)
-
+        self._msg = capi.nlmsg_alloc() if size == 0 else capi.nlmsg_alloc_size(size)
         if self._msg is None:
             raise Exception('Message allocation returned NULL')
 
@@ -186,7 +182,7 @@ class Socket(object):
     def __init__(self, cb=None):
         if isinstance(cb, Callback):
             self._sock = capi.nl_socket_alloc_cb(cb._cb)
-        elif cb == None:
+        elif cb is None:
             self._sock = capi.nl_socket_alloc()
         else:
             raise Exception('\'cb\' parameter has wrong type')
@@ -359,22 +355,14 @@ class Object(object):
 
         module = sys.modules[path]
 
-        if constructor:
-            ret = getattr(module, constructor)(self)
-        else:
-            ret = module.init(self)
-
+        ret = getattr(module, constructor)(self) if constructor else module.init(self)
         if ret:
             self._modules.append(ret)
 
     def _module_brief(self):
-        ret = ''
-
-        for module in self._modules:
-            if hasattr(module, 'brief'):
-                ret += module.brief()
-
-        return ret
+        return ''.join(
+            module.brief() for module in self._modules if hasattr(module, 'brief')
+        )
 
     def dump(self, params=None):
         """Dump object as human readable text"""
@@ -506,9 +494,8 @@ class Cache(object):
         obj = capi.nl_cache_search(self._nl_cache, item._nl_object)
         if obj is None:
             return False
-        else:
-            capi.nl_object_put(obj)
-            return True
+        capi.nl_object_put(obj)
+        return True
 
     # called by sub classes to allocate type specific caches by name
     @staticmethod
@@ -707,38 +694,23 @@ class AbstractAddress(object):
         return diff == 0
 
     def __nonzero__(self):
-        if self._nl_addr:
-            return not capi.nl_addr_iszero(self._nl_addr)
-        else:
-            return False
+        return not capi.nl_addr_iszero(self._nl_addr) if self._nl_addr else False
 
     def __len__(self):
-        if self._nl_addr:
-            return capi.nl_addr_get_len(self._nl_addr)
-        else:
-            return 0
+        return capi.nl_addr_get_len(self._nl_addr) if self._nl_addr else 0
 
     def __str__(self):
-        if self._nl_addr:
-            return capi.nl_addr2str(self._nl_addr, 64)[0]
-        else:
-            return 'none'
+        return capi.nl_addr2str(self._nl_addr, 64)[0] if self._nl_addr else 'none'
 
     @property
     def shared(self):
         """True if address is shared (multiple users)"""
-        if self._nl_addr:
-            return capi.nl_addr_shared(self._nl_addr) != 0
-        else:
-            return False
+        return capi.nl_addr_shared(self._nl_addr) != 0 if self._nl_addr else False
 
     @property
     def prefixlen(self):
         """Length of prefix (number of bits)"""
-        if self._nl_addr:
-            return capi.nl_addr_get_prefixlen(self._nl_addr)
-        else:
-            return 0
+        return capi.nl_addr_get_prefixlen(self._nl_addr) if self._nl_addr else 0
 
     @prefixlen.setter
     def prefixlen(self, value):
@@ -750,10 +722,7 @@ class AbstractAddress(object):
     @property
     def family(self):
         """Address family"""
-        f = 0
-        if self._nl_addr:
-            f = capi.nl_addr_get_family(self._nl_addr)
-
+        f = capi.nl_addr_get_family(self._nl_addr) if self._nl_addr else 0
         return AddressFamily(f)
 
     @family.setter
